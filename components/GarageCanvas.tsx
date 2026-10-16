@@ -1,5 +1,69 @@
-'use client';import{Canvas,useThree}from'@react-three/fiber';import{Environment,OrbitControls,ContactShadows,Text}from'@react-three/drei';import{useEffect,useRef}from'react';import{OrbitControls as OrbitControlsImpl}from'three-stdlib';import{useGarage}from'@/store/garage';
-function CameraRig(){const preset=useGarage(s=>s.config.cameraPreset);const controls=useRef<OrbitControlsImpl>(null);const{camera}=useThree();useEffect(()=>{const positions={free:[5,3.1,6],front:[5,1.2,0],back:[-5,1.2,0],left:[0,1.2,5],right:[0,1.2,-5]}as const;const[x,y,z]=positions[preset];camera.position.set(x,y,z);camera.lookAt(0,0,0);controls.current?.target.set(0,0,0);controls.current?.update()},[preset,camera]);return <OrbitControls ref={controls} enablePan={false} minDistance={4} maxDistance={10}/>}
-function Wheel({x,z}:{x:number;z:number}){const{wheelColor,wheelId}=useGarage(s=>s.config);return <group position={[x,-.28,z]} rotation={[Math.PI/2,0,0]}><mesh><cylinderGeometry args={[.45,.45,.3,32]}/><meshStandardMaterial color="#111"/></mesh><mesh position={[0,.17,0]}>{wheelId==='aero'?<cylinderGeometry args={[.29,.29,.32,6]}/>:wheelId==='mesh'?<torusGeometry args={[.22,.065,12,20]}/>:<cylinderGeometry args={[.25,.25,.32,8]}/>}<meshStandardMaterial color={wheelColor} metalness={.8} roughness={.2}/></mesh></group>}
-function Car(){const c=useGarage(s=>s.config);return <group rotation={[0,-.35,0]}><mesh position={[0,.15,0]} scale={[2.2,.45,1]}><boxGeometry/><meshStandardMaterial color={c.paintColor} metalness={.65} roughness={.25}/></mesh><mesh position={[-.15,.75,0]} scale={[1.1,.65,.88]}><boxGeometry/><meshStandardMaterial color="#173236" metalness={.3} roughness={.15}/></mesh>{c.stripes&&<mesh position={[0,.61,1.011]} scale={[.18,.14,.7]}><boxGeometry/><meshStandardMaterial color="#f5ebdd"/></mesh>}{c.decals.length>0&&<mesh position={[.55,.2,1.011]} scale={[.35,.35,.02]}><circleGeometry args={[1,32]}/><meshStandardMaterial color="#f5ebdd"/></mesh>}<Wheel x={-1.35} z={.78}/><Wheel x={1.35} z={.78}/><Wheel x={-1.35} z={-.78}/><Wheel x={1.35} z={-.78}/><Text position={[2.23,.05,0]} rotation={[0,Math.PI/2,0]} fontSize={.16} color="#111" anchorX="center">{c.licensePlate}</Text></group>}
-export function GarageCanvas(){const scene=useGarage(s=>s.config.environment);return <Canvas id="garage-canvas" gl={{preserveDrawingBuffer:true,antialias:true}} dpr={[1,1.5]} camera={{position:[5,3.1,6],fov:38}} shadows><color attach="background" args={[scene==='sunset'?'#b9532e':scene==='studio'?'#c7c1b8':scene==='paddock'?'#53605b':'#071a1c']}/><ambientLight intensity={scene==='night'?.65:1.5}/><directionalLight position={[4,7,5]} intensity={scene==='night'?2:4} castShadow/><Car/><ContactShadows position={[0,-.72,0]} opacity={.6} scale={12} blur={2}/><CameraRig/><Environment preset={scene==='sunset'?'sunset':scene==='night'?'night':'warehouse'}/></Canvas>}
+'use client';
+
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { ContactShadows, OrbitControls } from '@react-three/drei';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { useGarage } from '@/store/garage';
+
+type Props = { lowPerformance?: boolean; onReady?: () => void; onError?: (message: string) => void };
+const palettes = {
+  sunset: { sky: '#df7040', floor: '#3d2820', key: '#ffb06d', fill: '#ffe4b7', sign: '#ff5b20' },
+  studio: { sky: '#d7d0c5', floor: '#77716a', key: '#fff4e5', fill: '#d8e2df', sign: '#ff5b20' },
+  night: { sky: '#061416', floor: '#0a1e20', key: '#f7652b', fill: '#70b9ad', sign: '#ff6b32' },
+  paddock: { sky: '#8d9187', floor: '#414841', key: '#f7d4a0', fill: '#c6d0c7', sign: '#f25a24' },
+} as const;
+
+function usePlateTexture(text: string) {
+  return useMemo(() => {
+    const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+    if (ctx) { ctx.fillStyle = '#f2e6cf'; ctx.fillRect(0, 0, 512, 160); ctx.strokeStyle = '#0a1c1e'; ctx.lineWidth = 12; ctx.strokeRect(8, 8, 496, 144); ctx.fillStyle = '#0a1c1e'; ctx.font = '900 72px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 256, 84); }
+    const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture;
+  }, [text]);
+}
+
+function Wheel({ x, z }: { x: number; z: number }) {
+  const { wheelId, wheelColor } = useGarage((state) => state.config);
+  const spokes = wheelId === 'classic' ? 5 : wheelId === 'mesh' ? 10 : 3;
+  return <group position={[x, -0.18, z]} rotation={[Math.PI / 2, 0, 0]}>
+    <mesh castShadow><torusGeometry args={[0.42, 0.15, 12, 32]} /><meshStandardMaterial color="#0b0c0b" roughness={0.78} /></mesh>
+    <mesh><cylinderGeometry args={[0.3, 0.3, 0.18, wheelId === 'aero' ? 6 : 24]} /><meshStandardMaterial color={wheelColor} metalness={0.88} roughness={0.2} /></mesh>
+    {Array.from({ length: spokes }, (_, index) => <mesh key={index} rotation={[0, 0, (Math.PI * 2 * index) / spokes]} position={[0.14, 0, 0]}><boxGeometry args={[0.3, 0.055, 0.2]} /><meshStandardMaterial color={wheelColor} metalness={0.9} roughness={0.16} /></mesh>)}
+  </group>;
+}
+
+function Car() {
+  const c = useGarage((state) => state.config); const plate = usePlateTexture(c.licensePlate);
+  useEffect(() => () => plate.dispose(), [plate]);
+  const finish = c.paintColor === '#171717' ? { metalness: 0.15, roughness: 0.72 } : { metalness: 0.82, roughness: 0.2 };
+  return <group rotation={[0, -0.42, 0]} scale={1.08} position={[0, 0.05, 0]}>
+    <mesh castShadow position={[0, 0.15, 0]} scale={[2.25, 0.48, 1]}><boxGeometry /><meshStandardMaterial color={c.paintColor} {...finish} /></mesh>
+    <mesh castShadow position={[-0.18, 0.78, 0]} scale={[1.12, 0.62, 0.86]}><boxGeometry /><meshPhysicalMaterial color="#173236" metalness={0.45} roughness={0.12} transmission={0.12} /></mesh>
+    <mesh castShadow position={[2.05, 0.38, 0]} scale={[0.35, 0.22, 0.96]}><boxGeometry /><meshStandardMaterial color={c.paintColor} {...finish} /></mesh>
+    <mesh castShadow position={[-2.05, 0.34, 0]} scale={[0.3, 0.2, 0.95]}><boxGeometry /><meshStandardMaterial color={c.paintColor} {...finish} /></mesh>
+    {c.stripes && <mesh position={[0.1, 0.641, 0]} scale={[1.78, 0.035, 0.13]}><boxGeometry /><meshStandardMaterial color="#f5ebdd" roughness={0.48} /></mesh>}
+    {c.decals.length > 0 && <><mesh position={[0.62, 0.18, 1.012]} scale={[0.34, 0.34, 0.025]}><circleGeometry args={[1, 32]} /><meshStandardMaterial color="#f5ebdd" /></mesh><mesh position={[0.62, 0.18, -1.012]} rotation={[0, Math.PI, 0]} scale={[0.34, 0.34, 0.025]}><circleGeometry args={[1, 32]} /><meshStandardMaterial color="#f5ebdd" /></mesh></>}
+    <mesh position={[2.236, 0.1, 0]} rotation={[0, Math.PI / 2, 0]} scale={[0.56, 0.18, 1]}><planeGeometry /><meshBasicMaterial map={plate} toneMapped={false} /></mesh>
+    <mesh position={[2.37, 0.38, 0.58]} rotation={[0, Math.PI / 2, 0]}><circleGeometry args={[0.17, 24]} /><meshStandardMaterial color="#ffe0a0" emissive="#ffb13b" emissiveIntensity={2} /></mesh>
+    <mesh position={[2.37, 0.38, -0.58]} rotation={[0, Math.PI / 2, 0]}><circleGeometry args={[0.17, 24]} /><meshStandardMaterial color="#ffe0a0" emissive="#ffb13b" emissiveIntensity={2} /></mesh>
+    <Wheel x={-1.35} z={0.84} /><Wheel x={1.35} z={0.84} /><Wheel x={-1.35} z={-0.84} /><Wheel x={1.35} z={-0.84} />
+  </group>;
+}
+
+function GarageSet() {
+  const env = useGarage((state) => state.config.environment); const p = palettes[env];
+  return <><color attach="background" args={[p.sky]} /><fog attach="fog" args={[p.sky, 10, 24]} /><hemisphereLight args={[p.fill, '#17110c', env === 'night' ? 0.9 : 1.8]} /><directionalLight position={[5, 8, 6]} intensity={env === 'night' ? 2.2 : 3.8} color={p.key} castShadow shadow-mapSize={[1024, 1024]} /><pointLight position={[-4, 2.5, -2]} intensity={env === 'night' ? 18 : 8} color={p.sign} distance={9} /><mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.72, 0]}><planeGeometry args={[30, 30]} /><meshStandardMaterial color={p.floor} roughness={0.64} metalness={0.15} /></mesh><mesh receiveShadow position={[0, -0.62, 0]}><cylinderGeometry args={[3.8, 4, 0.2, 64]} /><meshStandardMaterial color="#11282a" roughness={0.45} metalness={0.42} /></mesh><gridHelper args={[30, 30, p.sign, '#203436']} position={[0, -0.605, 0]} /><mesh position={[0, 3.6, -5.5]}><planeGeometry args={[15, 8]} /><meshStandardMaterial color={env === 'night' ? '#07191b' : '#3c312b'} roughness={0.9} /></mesh><mesh position={[0, 3.8, -5.35]}><boxGeometry args={[5.3, 0.12, 0.12]} /><meshStandardMaterial color={p.sign} emissive={p.sign} emissiveIntensity={3} /></mesh></>;
+}
+
+function CameraRig({ onReady }: { onReady?: () => void }) {
+  const preset = useGarage((state) => state.config.cameraPreset); const { camera, invalidate } = useThree(); const controls = useRef<OrbitControlsImpl>(null); const announced = useRef(false);
+  useFrame(() => { if (!announced.current) { announced.current = true; onReady?.(); } });
+  useEffect(() => { const positions = { free: [5.8, 3.1, 6.7], front: [7.5, 1.8, 0], back: [-7.5, 1.8, 0], left: [0, 1.8, 7.5], right: [0, 1.8, -7.5] } as const; const position = positions[preset]; camera.position.set(position[0], position[1], position[2]); controls.current?.target.set(0, 0.25, 0); controls.current?.update(); invalidate(); }, [camera, preset, invalidate]);
+  return <OrbitControls ref={controls} makeDefault enablePan={false} minDistance={5} maxDistance={10} minPolarAngle={0.65} maxPolarAngle={1.48} dampingFactor={0.08} enableDamping />;
+}
+
+export function GarageCanvas({ lowPerformance = false, onReady, onError }: Props) {
+  return <Canvas data-testid="garage-canvas-host" frameloop="demand" dpr={lowPerformance ? 1 : [1, 1.5]} camera={{ position: [5.8, 3.1, 6.7], fov: 38, near: 0.1, far: 40 }} gl={{ preserveDrawingBuffer: true, antialias: !lowPerformance, powerPreference: lowPerformance ? 'low-power' : 'high-performance', alpha: false }} shadows={!lowPerformance} onCreated={({ gl }) => { gl.domElement.id = 'garage-canvas'; gl.domElement.dataset.testid = 'garage-canvas'; gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.08; gl.domElement.addEventListener('webglcontextlost', (event) => { event.preventDefault(); onError?.('WebGL context was lost.'); }, { once: true }); }}><GarageSet /><Car />{!lowPerformance && <ContactShadows position={[0, -0.7, 0]} opacity={0.58} scale={10} blur={2.5} far={5} />}<CameraRig onReady={onReady} /></Canvas>;
+}
