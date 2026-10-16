@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';export default function P(){return <PageShell eyebrow="ACCOUNT" title="SETTINGS" copy="Manage wallet sessions, network preferences, notifications and privacy."/>}

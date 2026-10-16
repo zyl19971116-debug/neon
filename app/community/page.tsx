@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';export default function P(){return <PageShell eyebrow="GOOD CARS · GOOD PEOPLE" title="COMMUNITY" copy="Recent builds, genuine engagement, creator follows and moderated conversation — never a fabricated leaderboard."/>}

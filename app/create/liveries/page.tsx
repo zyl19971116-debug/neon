@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';import {Studio} from '@/components/Studio';export default function P(){return <PageShell eyebrow="CREATE / 02" title="LIVERY STUDIO" copy="Combine paint, stripes and decals into a reusable visual system."><Studio kind="Livery"/></PageShell>}

@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';export default function P(){return <PageShell eyebrow="YOUR COLLECTION" title="SHOWROOM" copy="Owned cars, saved builds, collected parts and favorites are shown after wallet authentication."/>}

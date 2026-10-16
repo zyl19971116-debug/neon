@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';import {Featured} from '@/components/Featured';export default function Market(){return <PageShell eyebrow="ROBINHOOD CHAIN" title="NEON MARKET" copy="Browse indexed listings. Ownership and listing state are verified against the chain before any transaction."><Featured/></PageShell>}

@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';import {Studio} from '@/components/Studio';export default function P(){return <PageShell eyebrow="CREATE / 01" title="DECAL STUDIO" copy="Prepare original body graphics with explicit licensing and safe asset validation."><Studio kind="Decal"/></PageShell>}

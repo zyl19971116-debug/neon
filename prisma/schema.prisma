@@ -1,0 +1,19 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+enum BuildStatus { DRAFT SAVED MINTING MINTED LISTED SOLD CANCELLED }
+model User { id String @id @default(cuid()) wallet String @unique createdAt DateTime @default(now()) builds CarBuild[] comments Comment[] }
+model WalletSession { id String @id @default(cuid()) wallet String nonce String @unique expiresAt DateTime usedAt DateTime? }
+model CarModel { id String @id @default(cuid()) name String assetUri String builds CarBuild[] }
+model CarBuild { id String @id @default(cuid()) name String ownerId String modelId String config Json previewUrl String? status BuildStatus @default(DRAFT) createdAt DateTime @default(now()) owner User @relation(fields:[ownerId],references:[id]) model CarModel @relation(fields:[modelId],references:[id]) versions BuildVersion[] }
+model BuildVersion { id String @id @default(cuid()) buildId String version Int config Json createdAt DateTime @default(now()) build CarBuild @relation(fields:[buildId],references:[id]) }
+model CarPart { id String @id @default(cuid()) name String creator String metadata Json }
+model Decal { id String @id @default(cuid()) name String creator String assetUri String metadata Json }
+model NFTAsset { id String @id @default(cuid()) chainId Int contract String tokenId String owner String metadataUri String @@unique([chainId,contract,tokenId]) }
+model MarketplaceListing { id String @id @default(cuid()) chainId Int contract String tokenId String seller String priceWei String status BuildStatus transactionHash String? }
+model MarketplaceSale { id String @id @default(cuid()) listingId String buyer String priceWei String transactionHash String @unique createdAt DateTime @default(now()) }
+model Favorite { id String @id @default(cuid()) userId String targetId String @@unique([userId,targetId]) }
+model Like { id String @id @default(cuid()) userId String targetId String @@unique([userId,targetId]) }
+model Comment { id String @id @default(cuid()) body String userId String targetId String createdAt DateTime @default(now()) user User @relation(fields:[userId],references:[id]) }
+model Follow { id String @id @default(cuid()) follower String following String @@unique([follower,following]) }
+model CommunityEvent { id String @id @default(cuid()) title String startsAt DateTime description String }
+model TransactionRecord { id String @id @default(cuid()) wallet String hash String @unique chainId Int kind String status String createdAt DateTime @default(now()) }

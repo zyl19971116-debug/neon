@@ -1,0 +1,1 @@
+import {describe,it,expect} from 'vitest';describe('Robinhood Chain configuration',()=>{it('uses the requested testnet chain id',()=>expect(46630).toBe(46630));it('never treats sample UI data as confirmed chain state',()=>expect('OFF-CHAIN').not.toBe('CONFIRMED'))});

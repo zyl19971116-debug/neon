@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';import {Studio} from '@/components/Studio';export default function P(){return <PageShell eyebrow="CREATE / 03" title="PART STUDIO" copy="Publish only real compatible 3D parts with mesh and model compatibility metadata."><Studio kind="Part"/></PageShell>}

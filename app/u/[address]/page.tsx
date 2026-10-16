@@ -1,0 +1,1 @@
+import {PageShell} from '@/components/PageShell';export default function P({params}:{params:{address:string}}){return <PageShell eyebrow="PUBLIC GARAGE" title={`${params.address.slice(0,6)}…${params.address.slice(-4)}`} copy="Public builds and collected assets verified for this wallet address."/>}
