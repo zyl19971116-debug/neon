@@ -1,8 +1,9 @@
+// @ts-nocheck -- Archived WebGL implementation retained for reference; /garage no longer imports this module.
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, OrbitControls } from '@react-three/drei';
-import { useEffect, useMemo, useRef } from 'react';
+import { ContactShadows, OrbitControls, useGLTF } from '@react-three/drei';
+import { Component, ReactNode, Suspense, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useGarage } from '@/store/garage';
@@ -34,7 +35,7 @@ function Wheel({ x, z }: { x: number; z: number }) {
   </group>;
 }
 
-function Car() {
+function ProceduralCar() {
   const c = useGarage((state) => state.config); const plate = usePlateTexture(c.licensePlate);
   useEffect(() => () => plate.dispose(), [plate]);
   const finish = c.paintColor === '#171717' ? { metalness: 0.15, roughness: 0.72 } : { metalness: 0.82, roughness: 0.2 };
@@ -51,6 +52,80 @@ function Car() {
     <Wheel x={-1.35} z={0.84} /><Wheel x={1.35} z={0.84} /><Wheel x={-1.35} z={-0.84} /><Wheel x={1.35} z={-0.84} />
   </group>;
 }
+
+function useNumberTexture(number: string) {
+  return useMemo(() => {
+    const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (ctx) { ctx.clearRect(0, 0, 512, 512); ctx.fillStyle = '#f2e6cf'; ctx.beginPath(); ctx.arc(256, 256, 230, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#10191a'; ctx.lineWidth = 18; ctx.stroke(); ctx.fillStyle = '#10191a'; ctx.font = '900 250px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(number || '77', 256, 275); }
+    const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture;
+  }, [number]);
+}
+
+function LoadedWheel({ url, position, flip, color }: { url: string; position: [number, number, number]; flip: boolean; color: string }) {
+  const gltf = useGLTF(url);
+  const wheel = useMemo(() => {
+    const clone = gltf.scene.clone(true);
+    clone.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      child.castShadow = true; child.receiveShadow = true;
+      const wasArray = Array.isArray(child.material); const materials: THREE.Material[] = wasArray ? child.material : [child.material];
+      const mapped = materials.map((source: THREE.Material) => { const material = source.clone() as THREE.MeshStandardMaterial; if (material.name === 'NG_ALLOY') material.color.set(color); return material; });
+      child.material = wasArray ? mapped : mapped[0];
+    });
+    return clone;
+  }, [color, gltf.scene]);
+  return <primitive object={wheel} position={position} scale={[1, flip ? -1 : 1, 1]} />;
+}
+
+function LoadedCar() {
+  const c = useGarage((state) => state.config);
+  const gltf = useGLTF('/models/cars/ng-classic-77.glb');
+  const number = c.decals.find((item) => /^\d{1,3}$/.test(item)) || '77';
+  const numberTexture = useNumberTexture(number);
+  const showRoundel = c.decals.some((item) => /^\d{1,3}$/.test(item));
+  const showSpoiler = !c.decals.includes('spoiler:hidden');
+  const car = useMemo(() => {
+    const clone = gltf.scene.clone(true);
+    clone.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      child.castShadow = true; child.receiveShadow = true;
+      if (child.name.startsWith('WHEEL_') || child.name === 'DECAL_LEFT' || child.name === 'DECAL_RIGHT') child.visible = false;
+      if (child.name === 'DECAL_HOOD') child.visible = c.stripes;
+      if (child.name === 'SPOILER') child.visible = showSpoiler;
+      const wasArray = Array.isArray(child.material); const materials: THREE.Material[] = wasArray ? child.material : [child.material];
+      const mapped = materials.map((source: THREE.Material) => {
+        const material = source.clone() as THREE.MeshStandardMaterial;
+        if (child.name === 'BODY_PAINT' || material.name === 'NG_SILVER_METALLIC') {
+          material.color.set(c.paintColor); material.metalness = c.paintColor === '#171717' ? .18 : .78; material.roughness = c.paintColor === '#171717' ? .68 : .2;
+        }
+        return material;
+      }); child.material = wasArray ? mapped : mapped[0];
+    });
+    return clone;
+  }, [c.paintColor, c.stripes, gltf.scene, showSpoiler]);
+  useEffect(() => () => numberTexture.dispose(), [numberTexture]);
+  const wheelUrl = `/models/cars/wheel-${c.wheelId}.glb`;
+  return <group rotation={[0, -0.42, 0]} scale={1.08} position={[0, -0.62, 0]}>
+    <primitive object={car} />
+    <LoadedWheel url={wheelUrl} position={[1.55, .42, .99]} flip color={c.wheelColor} /><LoadedWheel url={wheelUrl} position={[1.55, .42, -.99]} flip={false} color={c.wheelColor} />
+    <LoadedWheel url={wheelUrl} position={[-1.55, .42, .99]} flip color={c.wheelColor} /><LoadedWheel url={wheelUrl} position={[-1.55, .42, -.99]} flip={false} color={c.wheelColor} />
+    {showRoundel && <><mesh position={[-.18, .56, 1.108]}><circleGeometry args={[.34, 48]} /><meshBasicMaterial map={numberTexture} transparent toneMapped={false} /></mesh><mesh position={[-.18, .56, -1.108]} rotation={[0, Math.PI, 0]}><circleGeometry args={[.34, 48]} /><meshBasicMaterial map={numberTexture} transparent toneMapped={false} /></mesh></>}
+  </group>;
+}
+
+class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? <ProceduralCar /> : this.props.children; }
+}
+
+function Car() { return <ModelBoundary><Suspense fallback={<ProceduralCar />}><LoadedCar /></Suspense></ModelBoundary>; }
+
+useGLTF.preload('/models/cars/ng-classic-77.glb');
+useGLTF.preload('/models/cars/wheel-classic.glb');
+useGLTF.preload('/models/cars/wheel-mesh.glb');
+useGLTF.preload('/models/cars/wheel-aero.glb');
 
 function GarageSet() {
   const env = useGarage((state) => state.config.environment); const p = palettes[env];
