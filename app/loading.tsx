@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="min-h-screen bg-cream pt-[68px] grid place-items-center"><div className="text-center"><div className="mx-auto size-12 rounded-full border-4 border-ink/15 border-t-orange animate-spin"/><p className="race mt-5">WARMING UP THE GARAGE</p></div></main>}

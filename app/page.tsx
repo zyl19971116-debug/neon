@@ -42,8 +42,8 @@ export default function Home() {
     <main className="pt-[68px]">
       <section className="relative min-h-[680px] lg:h-[73vh] lg:min-h-[700px] bg-[#e7ad79] overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_25%,#fff2cf_0,transparent_37%),linear-gradient(110deg,#f5d1a5_0%,#ec7f4c_46%,#0b2527_100%)]" />
-        <div className="absolute inset-0 hidden md:block bg-[url('/assets/hero/neon-garage-sunset.png')] bg-cover bg-center" />
-        <div className="absolute inset-0 hidden md:block bg-gradient-to-r from-[#f7d3ab] via-[#f7d3ab]/70 to-transparent" />
+        <div className="absolute inset-0 bg-[url('/assets/hero/neon-garage-sunset.png')] bg-cover bg-[68%_center] md:bg-center" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#f7d3ab] via-[#f7d3ab]/90 md:via-[#f7d3ab]/70 to-[#f7d3ab]/45 md:to-transparent" />
         <div className="absolute inset-y-0 right-0 w-[64%] hidden">
           <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(8,27,29,.12)_25%,#071a1c_100%)]" />
           <div className="absolute bottom-[17%] right-[7%] w-[70%] h-[30%] rounded-[45%_60%_20%_20%] bg-gradient-to-r from-stone-100 via-orange-100 to-orange shadow-2xl rotate-[-2deg]">
