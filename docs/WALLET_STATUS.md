@@ -3,7 +3,7 @@
 ## COMPLETE
 
 - Wagmi and RainbowKit providers are mounted at the application root.
-- Robinhood Chain Testnet (`46630`) is the default chain; Robinhood Chain mainnet (`4663`) is also declared.
+- Robinhood Chain mainnet (`4663`) is the only configured and default chain.
 - Public RPC and explorer URLs match Robinhood's official chain documentation.
 - The header reflects actual connector/account/chain state rather than a local boolean.
 - RainbowKit provides connect, reconnect, account switching and disconnect flows.

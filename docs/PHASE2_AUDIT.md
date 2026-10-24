@@ -44,9 +44,9 @@ The first screenshot attempt found a stale development process that returned HTM
 
 - `DATABASE_URL`
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
-- Deployed testnet contract addresses
+- Deployed Robinhood Chain mainnet contract addresses
 - Persistent object storage / IPFS-compatible upload service
-- Robinhood Chain testnet deployment wallet and test ETH
+- Robinhood Chain mainnet deployment wallet and ETH for gas
 
 No credentials were read, printed or modified.
 

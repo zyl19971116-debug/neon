@@ -1,6 +1,6 @@
 # Neon Garage
 
-An original Web3 automotive customization and collectibles experience for Robinhood Chain Testnet.
+An original Web3 automotive customization and collectibles experience for Robinhood Chain.
 
 ## Run
 
@@ -14,8 +14,8 @@ No contract deployment or live transaction is performed by default. Example mark
 
 ## Network
 
-- Robinhood Chain Testnet: chain ID `46630`
-- RPC: `https://rpc.testnet.chain.robinhood.com`
+- Robinhood Chain Mainnet: chain ID `4663`
+- RPC: `https://rpc.mainnet.chain.robinhood.com`
 - Gas token: ETH
 
 ## Contracts
